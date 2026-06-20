@@ -1,6 +1,6 @@
 # Little Archive
 
-A personal mobile cataloging app where users photograph interesting objects — nature specimens, antiques, art, and handmade items — and the app identifies them, removes the background, and files them into a scrapbook-style collection.
+A personal mobile cataloging app where users photograph interesting objects — nature specimens, antiques, art, and handmade items — and add the description for them, and files them into a scrapbook-style collection.
 
 ## Features
 
