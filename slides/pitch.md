@@ -1,89 +1,69 @@
-# Little Archive — Pitch Slides
+---
+marp: true
+paginate: true
+transition: fade
+# PechaKucha: 6 slides, 20s auto-advance. Do not change the count.
+auto-advance: 20
+---
+
+<!-- slide 1 -->
+# Who's my person?
+
+**Curious people who collect interesting objects**
+
+- Nature lovers, hobbyists, collectors, explorers
+- People who want to document their discoveries
+
+<!-- 20s -->
 
 ---
 
-## Slide 1: Title
+<!-- slide 2 -->
+# Their problem
 
-# 📦 Little Archive
-
-**Your personal museum in your pocket**
-
-A mobile app for cataloging physical objects — nature specimens, antiques, art, and handmade items.
-
-*Built with React Native + Expo*
+- Photos get forgotten in phone galleries
+- Hard to remember object details and information
+- No simple way to organize personal discoveries
 
 ---
 
-## Slide 2: Problem
+<!-- slide 3 -->
+# What I built
 
-# The Problem
+**A digital scrapbook for real-world discoveries**
 
-- You collect interesting objects but they sit in boxes, forgotten
-- No easy way to catalog and organize physical items
-- Existing apps are either too complex or too ugly
-- Want something that feels like a real journal/scrapbook
-
----
-
-## Slide 3: Solution
-
-# The Solution
-
-**Little Archive** lets you:
-
-- 📸 Photograph any object
-- 📁 Organize into custom collections
-- 🏷️ Add titles, descriptions, and notes
-- 🎨 Enjoy a beautiful vintage journal aesthetic
-
-*Your personal catalog, always in your pocket*
+- Uses AI to identify and document objects
+- Lets users create personal collections
 
 ---
 
-## Slide 4: Tech Stack
+<!-- slide 4 -->
+# How I built it
 
-# Built With
+**Tech Stack:**
+- React Native + Expo SDK 54
+- Firebase Auth 
+- Gemini API (AI identification)
+- Removebg API (Removing Background)
 
-| Layer | Technology |
-|-------|------------|
-| Framework | React Native (Expo SDK 54) |
-| Navigation | Expo Router |
-| State | Zustand |
-| Backend | Firebase (Auth + Firestore) |
-| UI | Custom vintage theme |
-
-*Client-side architecture with local image storage*
-
----
-
-## Slide 5: Current Status
-
-# What Works Today
-
-✅ User authentication (email/password)
-✅ Create and manage collections
-✅ Capture photos from camera or gallery
-✅ Add items with metadata to collections
-✅ Beautiful vintage-themed UI
-✅ Cloud sync via Firestore
-
-**Coming Soon:**
-- AI-powered object identification (Google Cloud Vision)
-- Automatic background removal (Remove.bg)
+**MCPs:** Expo, Firebase, Context7, Claude-mem
+**Agents:** UI-UX Reviewer, Code Reviewer, Code Cleaner, Debugger
+**Skills:** Superpowers
 
 ---
 
-## Slide 6: Call to Action
+<!-- slide 5 -->
+# Why it matters
 
-# Try It Out!
+- Turns random photos into meaningful collections
+- Helps users learn about their discoveries
+- Creates a personal digital memory archive
 
-**GitHub:** github.com/luna-devhub/little-archive
+---
 
-```
-npm install
-npx expo start
-```
+<!-- slide 6 -->
+# Done checklist
 
-Scan QR with Expo Go (SDK 54)
-
-*Star ⭐ the repo if you like it!*
+- [x] repo public
+- [x] MCP + skill + agent used
+- [x] report.md in team repo

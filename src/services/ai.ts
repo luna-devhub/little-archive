@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 
 // API keys from environment variables
-const GOOGLE_CLOUD_VISION_API_KEY = Constants.expoConfig?.extra?.googleCloudVisionApiKey || process.env.EXPO_PUBLIC_GOOGLE_CLOUD_VISION_API_KEY;
+const GEMINI_API_KEY = Constants.expoConfig?.extra?.geminiApiKey || process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 const REMOVE_BG_API_KEY = Constants.expoConfig?.extra?.removeBgApiKey || process.env.EXPO_PUBLIC_REMOVE_BG_API_KEY;
 
 interface IdentificationResult {
@@ -11,36 +11,51 @@ interface IdentificationResult {
 }
 
 /**
- * Identify an object using Google Cloud Vision API
+ * Identify an object using Gemini API
  * @param imageBase64 - Base64 encoded image
  * @returns Identification result with name, description, and fun facts
  */
 export async function identifyObject(imageBase64: string): Promise<IdentificationResult> {
-  if (!GOOGLE_CLOUD_VISION_API_KEY) {
-    throw new Error('Google Cloud Vision API key not configured');
+  if (!GEMINI_API_KEY) {
+    throw new Error('Gemini API key not configured');
   }
 
   try {
-    // Call Google Cloud Vision API
+    // Call Gemini API with image
     const response = await fetch(
-      `https://vision.googleapis.com/v1/images:annotate?key=${GOOGLE_CLOUD_VISION_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          requests: [
+          contents: [
             {
-              image: {
-                content: imageBase64,
-              },
-              features: [
-                { type: 'LABEL_DETECTION', maxResults: 10 },
-                { type: 'WEB_DETECTION', maxResults: 5 },
-              ],
-            },
+              parts: [
+                {
+                  text: `Analyze this image and identify the object/specimen. Return a JSON response with exactly these fields:
+{
+  "name": "specific name of the object (e.g., 'Monarch Butterfly (Danaus plexippus)' not just 'butterfly')",
+  "description": "2-3 sentence description of what this is, including identifying features",
+  "funFacts": "One interesting fact about this object/species"
+}
+
+Be specific with names. For animals and plants, include the scientific name in parentheses. For antiques or objects, include the style or era if identifiable.`
+                },
+                {
+                  inline_data: {
+                    mime_type: "image/jpeg",
+                    data: imageBase64
+                  }
+                }
+              ]
+            }
           ],
+          generationConfig: {
+            temperature: 0.4,
+            maxOutputTokens: 500,
+          }
         }),
       }
     );
@@ -51,23 +66,25 @@ export async function identifyObject(imageBase64: string): Promise<Identificatio
     }
 
     const data = await response.json();
-    const result = data.responses[0];
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    // Extract labels
-    const labels = result.labelAnnotations?.map((label: any) => label.description) || [];
+    if (!text) {
+      throw new Error('No response from Gemini');
+    }
 
-    // Extract web entities
-    const webEntities = result.webDetection?.webEntities?.map((entity: any) => entity.description) || [];
+    // Parse JSON from response (handle markdown code blocks)
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('Invalid response format from Gemini');
+    }
 
-    // Extract best guess
-    const bestGuess = result.webDetection?.bestGuessLabels?.[0]?.label || '';
+    const result = JSON.parse(jsonMatch[0]);
 
-    // Generate identification result
-    const name = bestGuess || labels[0] || 'Unknown Object';
-    const description = generateDescription(labels, webEntities);
-    const funFacts = generateFunFacts(name, labels);
-
-    return { name, description, funFacts };
+    return {
+      name: result.name || 'Unknown Object',
+      description: result.description || 'An interesting find worth cataloging.',
+      funFacts: result.funFacts || 'Every object has a story worth preserving.'
+    };
   } catch (error: any) {
     console.error('Error identifying object:', error);
     throw error;
@@ -110,52 +127,4 @@ export async function removeBackground(imageBase64: string): Promise<string> {
     console.error('Error removing background:', error);
     throw error;
   }
-}
-
-/**
- * Generate a description from labels and web entities
- */
-function generateDescription(labels: string[], webEntities: string[]): string {
-  const allTerms = [...new Set([...labels, ...webEntities])].slice(0, 5);
-
-  if (allTerms.length === 0) {
-    return 'An interesting object worth cataloging.';
-  }
-
-  if (allTerms.length === 1) {
-    return `A ${allTerms[0].toLowerCase()} found and cataloged.`;
-  }
-
-  return `Identified as: ${allTerms.join(', ')}.`;
-}
-
-/**
- * Generate fun facts based on the identified object
- */
-function generateFunFacts(name: string, labels: string[]): string {
-  const lowercaseName = name.toLowerCase();
-  const lowercaseLabels = labels.map(l => l.toLowerCase());
-
-  // Simple fun fact generation based on common categories
-  if (lowercaseLabels.some(l => l.includes('flower') || l.includes('plant') || l.includes('botany'))) {
-    return 'Plants have been collected and preserved for centuries. Herbarium specimens can last for hundreds of years when properly dried and stored.';
-  }
-
-  if (lowercaseLabels.some(l => l.includes('rock') || l.includes('mineral') || l.includes('stone'))) {
-    return 'Rocks and minerals are classified into three main types: igneous, sedimentary, and metamorphic. Each tells a story about Earth\'s history.';
-  }
-
-  if (lowercaseLabels.some(l => l.includes('insect') || l.includes('bug') || l.includes('butterfly'))) {
-    return 'Insects are the most diverse group of animals on Earth, with over a million described species. They play crucial roles in ecosystems.';
-  }
-
-  if (lowercaseLabels.some(l => l.includes('shell') || l.includes('seashell'))) {
-    return 'Seashells are the exoskeletons of marine mollusks. Their spiral patterns often follow the golden ratio found in nature.';
-  }
-
-  if (lowercaseLabels.some(l => l.includes('antique') || l.includes('vintage') || l.includes('old'))) {
-    return 'Antiques gain value through age, rarity, condition, and historical significance. Each piece carries stories of the past.';
-  }
-
-  return 'Every object has a story. Cataloging helps preserve the memory and context of the things we find interesting.';
 }

@@ -33,6 +33,7 @@ interface CollectionsState {
   createCollection: (name: string, icon: string) => Promise<string>;
   updateCollection: (id: string, data: Partial<Pick<Collection, 'name' | 'icon' | 'order'>>) => Promise<void>;
   deleteCollection: (id: string) => Promise<void>;
+  refreshItemCount: (collectionId: string) => Promise<void>;
   clearError: () => void;
 }
 
@@ -59,6 +60,20 @@ export const useCollectionsStore = create<CollectionsState>((set, get) => ({
       const querySnapshot = await getDocs(q);
       const collections: Collection[] = [];
 
+      // Fetch item counts for all collections
+      const itemsQuery = query(
+        collection(db, 'items'),
+        where('userId', '==', user.uid)
+      );
+      const itemsSnapshot = await getDocs(itemsQuery);
+      const itemCounts: Record<string, number> = {};
+
+      itemsSnapshot.forEach((doc) => {
+        const data = doc.data();
+        const collectionId = data.collectionId;
+        itemCounts[collectionId] = (itemCounts[collectionId] || 0) + 1;
+      });
+
       querySnapshot.forEach((doc) => {
         const data = doc.data();
         collections.push({
@@ -68,6 +83,7 @@ export const useCollectionsStore = create<CollectionsState>((set, get) => ({
           icon: data.icon,
           createdAt: data.createdAt?.toDate() || new Date(),
           order: data.order || 0,
+          itemCount: itemCounts[doc.id] || 0,
         });
       });
 
@@ -158,6 +174,30 @@ export const useCollectionsStore = create<CollectionsState>((set, get) => ({
       console.error('Error deleting collection:', error);
       set({ error: 'Failed to delete collection', isLoading: false });
       throw error;
+    }
+  },
+
+  refreshItemCount: async (collectionId: string) => {
+    try {
+      const user = useAuthStore.getState().user;
+      if (!user) return;
+
+      const q = query(
+        collection(db, 'items'),
+        where('userId', '==', user.uid),
+        where('collectionId', '==', collectionId)
+      );
+
+      const querySnapshot = await getDocs(q);
+      const count = querySnapshot.size;
+
+      set((state) => ({
+        collections: state.collections.map((col) =>
+          col.id === collectionId ? { ...col, itemCount: count } : col
+        ),
+      }));
+    } catch (error: any) {
+      console.error('Error refreshing item count:', error);
     }
   },
 

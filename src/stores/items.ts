@@ -13,6 +13,7 @@ import {
 import { db } from '../services/firebase';
 import { useAuthStore } from './auth';
 import { storageService } from '../services/storage';
+import { useCollectionsStore } from './collections';
 
 export interface Item {
   id: string;
@@ -131,6 +132,9 @@ export const useItemsStore = create<ItemsState>((set, get) => ({
         isLoading: false,
       }));
 
+      // Refresh the collection's item count
+      await useCollectionsStore.getState().refreshItemCount(data.collectionId);
+
       return docRef.id;
     } catch (error: any) {
       console.error('Error creating item:', error);
@@ -185,6 +189,11 @@ export const useItemsStore = create<ItemsState>((set, get) => ({
         items: state.items.filter((item) => item.id !== id),
         isLoading: false,
       }));
+
+      // Refresh the collection's item count
+      if (item) {
+        await useCollectionsStore.getState().refreshItemCount(item.collectionId);
+      }
     } catch (error: any) {
       console.error('Error deleting item:', error);
       set({ error: 'Failed to delete item', isLoading: false });
